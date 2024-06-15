@@ -1,307 +1,159 @@
+let gameState = {
+    currentPlayer: 'X',
+    player1Name: 'Player 1',
+    player2Name: 'Player 2',
+    player1Score: 0,
+    player2Score: 0,
+    gameActive: true,
+    currentBoardSize: 3,
+    board: [],
+};
+
 document.addEventListener('DOMContentLoaded', () => {
-    const gameBoard = document.querySelector('.game-board');
-    const statusDisplay = document.querySelector('.status');
-    const resetButton = document.querySelector('.reset-button');
-    const modal = document.querySelector('.modal');
-    const confirmResetButton = document.getElementById('confirm-reset');
-    const cancelResetButton = document.getElementById('cancel-reset');
-    const singlePlayerButton = document.getElementById('single-player-button');
-    const twoPlayerButton = document.getElementById('two-player-button');
-    const startSingleGameButton = document.getElementById('start-single-game');
-    const startTwoGameButton = document.getElementById('start-two-game');
-    const playerNameInput = document.getElementById('player-name');
-    const player1Input = document.getElementById('player1-name');
-    const player2Input = document.getElementById('player2-name');
-    const player1ScoreDisplay = document.getElementById('player1-score');
-    const player2ScoreDisplay = document.getElementById('player2-score');
-    const resetScoreButton = document.querySelector('.reset-score-button');
-    const gridSizeSelector = document.getElementById('grid-size');
-    const difficultyLevelSelector = document.getElementById('difficulty-level');
+    document.getElementById('single-player-button').addEventListener('click', () => showLoginSection('single'));
+    document.getElementById('two-player-button').addEventListener('click', () => showLoginSection('two'));
+    document.getElementById('start-single-game').addEventListener('click', startSinglePlayerGame);
+    document.getElementById('start-two-game').addEventListener('click', startTwoPlayerGame);
+    document.querySelector('.reset-button').addEventListener('click', showResetModal);
+    document.getElementById('confirm-reset').addEventListener('click', resetGame);
+    document.getElementById('cancel-reset').addEventListener('click', closeModal);
+    document.querySelector('.reset-score-button').addEventListener('click', resetScore);
+    document.getElementById('grid-size').addEventListener('change', updateGridSize);
+});
 
-    let currentPlayer = 'X';
-    let player1Name = 'Player 1';
-    let player2Name = 'Player 2';
-    let player1Score = 0;
-    let player2Score = 0;
-    let gameActive = true;
-    let currentBoardSize = 3;
-    let board = Array(currentBoardSize).fill().map(() => Array(currentBoardSize).fill(''));
-    let moveTimeout;
-    let gameCounter = 0;
-    let isSinglePlayer = false;
-    let difficultyLevel = 'easy';
-
-    singlePlayerButton.addEventListener('click', () => {
-        document.querySelector('.mode-selection').style.display = 'none';
+function showLoginSection(mode) {
+    document.querySelector('.mode-selection').style.display = 'none';
+    if (mode === 'single') {
         document.querySelector('.login-section.single-player').style.display = 'block';
-    });
-
-    twoPlayerButton.addEventListener('click', () => {
-        document.querySelector('.mode-selection').style.display = 'none';
+    } else {
         document.querySelector('.login-section.two-player').style.display = 'block';
-    });
+    }
+}
 
-    startSingleGameButton.addEventListener('click', startSinglePlayerGame);
-    startTwoGameButton.addEventListener('click', startTwoPlayerGame);
-
-    function startSinglePlayerGame() {
-        player1Name = playerNameInput.value || 'Player 1';
-        player1ScoreDisplay.textContent = `${player1Name}: ${player1Score}`;
-        player2ScoreDisplay.style.display = 'none';
-        difficultyLevel = difficultyLevelSelector.value;
-        isSinglePlayer = true;
-        document.querySelector('.login-section.single-player').style.display = 'none';
-        document.querySelector('.game-section').style.display = 'block';
-       initGame();
+function startSinglePlayerGame() {
+    gameState.player1Name = document.getElementById('player-name').value || 'Player 1';
+    gameState.player2Name = 'Computer';
+    gameState.currentPlayer = 'X';
+    gameState.gameActive = true;
+    document.querySelector('.login-section.single-player').style.display = 'none';
+    document.querySelector('.game-section').style.display = 'block';
+    initGameBoard();
 }
 
 function startTwoPlayerGame() {
-    player1Name = player1Input.value || 'Player 1';
-    player2Name = player2Input.value || 'Player 2';
-    player1ScoreDisplay.textContent = `${player1Name}: ${player1Score}`;
-    player2ScoreDisplay.textContent = `${player2Name}: ${player2Score}`;
-    player2ScoreDisplay.style.display = 'block';
-    isSinglePlayer = false;
+    gameState.player1Name = document.getElementById('player1-name').value || 'Player 1';
+    gameState.player2Name = document.getElementById('player2-name').value || 'Player 2';
+    gameState.currentPlayer = 'X';
+    gameState.gameActive = true;
     document.querySelector('.login-section.two-player').style.display = 'none';
     document.querySelector('.game-section').style.display = 'block';
-    initGame();
+    initGameBoard();
 }
 
-gridSizeSelector.addEventListener('change', () => {
-    currentBoardSize = parseInt(gridSizeSelector.value);
-    initGame();
-});
+function initGameBoard() {
+    const boardSize = gameState.currentBoardSize;
+    gameState.board = Array(boardSize).fill().map(() => Array(boardSize).fill(''));
+    const gameBoard = document.querySelector('.game-board');
+    gameBoard.innerHTML = '';
+    gameBoard.style.gridTemplateColumns = `repeat(${boardSize}, 1fr)`;
+    for (let i = 0; i < boardSize; i++) {
+        for (let j = 0; j < boardSize; j++) {
+            const cell = document.createElement('div');
+            cell.classList.add('cell');
+            cell.setAttribute('data-row', i);
+            cell.setAttribute('data-col', j);
+            cell.addEventListener('click', handleCellClick);
+            gameBoard.appendChild(cell);
+        }
+    }
+}
 
 function handleCellClick(event) {
-    if (!gameActive) return;
-
+    if (!gameState.gameActive) return;
     const row = parseInt(event.target.getAttribute('data-row'));
     const col = parseInt(event.target.getAttribute('data-col'));
+    
+    if (gameState.board[row][col] !== '') return;
 
-    if (board[row][col] !== '') return;
+    gameState.board[row][col] = gameState.currentPlayer;
+    event.target.textContent = gameState.currentPlayer;
 
-    board[row][col] = currentPlayer;
-    event.target.textContent = currentPlayer;
-
-    if (checkWin(currentPlayer)) {
-        statusDisplay.textContent = `${currentPlayer === 'X' ? player1Name : player2Name} Wins!`;
-        alert(`${currentPlayer === 'X' ? player1Name : player2Name} Wins!`);
-        updateScore(currentPlayer);
-        gameActive = false;
-        moveTimeout = setTimeout(resetGame, 5000);
-        } else if (isBoardFull()) {
-            statusDisplay.textContent = 'Game is a draw!';
-            alert('Game is a draw!');
-            gameActive = false;
-            moveTimeout = setTimeout(resetGame, 5000);
-        } else {
-            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
-            updateStatus();
-            if (isSinglePlayer && currentPlayer === 'O') {
-                setTimeout(makeAIMove, 1000);
-            }
-        }
+    if (checkWin()) {
+        updateStatus(`${gameState.currentPlayer} wins!`);
+        updateScore();
+        gameState.gameActive = false;
+        return;
     }
 
-    function checkWin(player) {
-        for (let i = 0; i < currentBoardSize; i++) {
-            if (board[i].every(cell => cell === player)) return true;
-            if (board.every(row => row[i] === player)) return true;
-        }
-
-        if (board.every((row, index) => row[index] === player)) return true;
-        if (board.every((row, index) => row[currentBoardSize - index - 1] === player)) return true;
-
-        return false;
+    if (checkDraw()) {
+        updateStatus(`It's a draw!`);
+        gameState.gameActive = false;
+        return;
     }
 
-    function isBoardFull() {
-        return board.every(row => row.every(cell => cell !== ''));
+    gameState.currentPlayer = gameState.currentPlayer === 'X' ? 'O' : 'X';
+    updateStatus(`It's ${gameState.currentPlayer}'s turn`);
+}
+
+function checkWin() {
+    const board = gameState.board;
+    const size = gameState.currentBoardSize;
+
+    // Check rows, columns, and diagonals
+    for (let i = 0; i < size; i++) {
+        if (board[i].every(cell => cell === gameState.currentPlayer)) return true;
+        if (board.every(row => row[i] === gameState.currentPlayer)) return true;
     }
 
-    function resetGame() {
-        clearTimeout(moveTimeout);
-        gameCounter++;
-        currentPlayer = gameCounter % 2 === 0 ? 'X' : 'O';
+    if (board.every((row, idx) => row[idx] === gameState.currentPlayer)) return true;
+    if (board.every((row, idx) => row[size - 1 - idx] === gameState.currentPlayer)) return true;
 
-        board = Array(currentBoardSize).fill().map(() => Array(currentBoardSize).fill(''));
-        gameBoard.innerHTML = '';
-        gameBoard.style.gridTemplateColumns = `repeat(${currentBoardSize}, 100px)`;
-        gameBoard.style.gridTemplateRows = `repeat(${currentBoardSize}, 100px)`;
+    return false;
+}
 
-        for (let i = 0; i < currentBoardSize; i++) {
-            for (let j = 0; j < currentBoardSize; j++) {
-                const cell = document.createElement('div');
-                cell.setAttribute('data-row', i);
-                cell.setAttribute('data-col', j);
-                cell.addEventListener('click', handleCellClick);
-                gameBoard.appendChild(cell);
-            }
-        }
+function checkDraw() {
+    return gameState.board.flat().every(cell => cell !== '');
+}
 
-        gameActive = true;
-        updateStatus();
+function updateStatus(message) {
+    document.querySelector('.status').textContent = message;
+}
+
+function updateScore() {
+    if (gameState.currentPlayer === 'X') {
+        gameState.player1Score++;
+        document.getElementById('player1-score').textContent = `${gameState.player1Name}: ${gameState.player1Score}`;
+    } else {
+        gameState.player2Score++;
+        document.getElementById('player2-score').textContent = `${gameState.player2Name}: ${gameState.player2Score}`;
     }
+}
 
-    function updateStatus() {
-        statusDisplay.textContent = `${currentPlayer === 'X' ? player1Name : player2Name}'s turn`;
-    }
+function resetGame() {
+    gameState.gameActive = true;
+    gameState.currentPlayer = 'X';
+    initGameBoard();
+    updateStatus(`It's ${gameState.currentPlayer}'s turn`);
+    closeModal();
+}
 
-    function updateScore(player) {
-        if (player === 'X') {
-            player1Score++;
-        } else {
-            player2Score++;
-        }
-        player1ScoreDisplay.textContent = `${player1Name}: ${player1Score}`;
-        if (!isSinglePlayer) {
-            player2ScoreDisplay.textContent = `${player2Name}: ${player2Score}`;
-        }
-        highlightLeadingPlayer();
-    }
+function showResetModal() {
+    document.querySelector('.modal').style.display = 'block';
+}
 
-    function highlightLeadingPlayer() {
-        if (player1Score > player2Score) {
-            player1ScoreDisplay.classList.add('leading');
-            player2ScoreDisplay.classList.remove('leading');
-        } else if (player2Score > player1Score) {
-            player2ScoreDisplay.classList.add('leading');
-            player1ScoreDisplay.classList.remove('leading');
-        } else {
-            player1ScoreDisplay.classList.remove('leading');
-            player2ScoreDisplay.classList.remove('leading');
-        }
-    }
+function closeModal() {
+    document.querySelector('.modal').style.display = 'none';
+}
 
-    function makeAIMove() {
-        let row, col;
+function resetScore() {
+    gameState.player1Score = 0;
+    gameState.player2Score = 0;
+    document.getElementById('player1-score').textContent = `${gameState.player1Name}: 0`;
+    document.getElementById('player2-score').textContent = `${gameState.player2Name}: 0`;
+}
 
-        if (difficultyLevel === 'easy') {
-            [row, col] = getRandomMove();
-        } else if (difficultyLevel === 'medium') {
-            [row, col] = getMediumMove();
-        } else {
-            [row, col] = getHardMove();
-        }
-
-        board[row][col] = 'O';
-        const cell = document.querySelector(`[data-row='${row}'][data-col='${col}']`);
-        cell.textContent = 'O';
-
-        if (checkWin('O')) {
-            statusDisplay.textContent = `${player2Name} Wins!`;
-            alert(`${player2Name} Wins!`);
-            updateScore('O');
-            gameActive = false;
-            moveTimeout = setTimeout(resetGame, 5000);
-        } else if (isBoardFull()) {
-            statusDisplay.textContent = 'Game is a draw!';
-            alert('Game is a draw!');
-            gameActive = false;
-            moveTimeout = setTimeout(resetGame, 5000);
-        } else {
-            currentPlayer = 'X';
-            updateStatus();
-        }
-    }
-
-    function getRandomMove() {
-        const emptyCells = [];
-        for (let i = 0; i < currentBoardSize; i++) {
-            for (let j = 0; j < currentBoardSize; j++) {
-                if (board[i][j] === '') {
-                    emptyCells.push([i, j]);
-                }
-            }
-        }
-        return emptyCells[Math.floor(Math.random() * emptyCells.length)];
-    }
-
-    function getMediumMove() {
-        if (board[Math.floor(currentBoardSize / 2)][Math.floor(currentBoardSize / 2)] === '') {
-            return [Math.floor(currentBoardSize / 2), Math.floor(currentBoardSize / 2)];
-        }
-        const corners = [
-            [0, 0], [0, currentBoardSize - 1],
-            [currentBoardSize - 1, 0], [currentBoardSize - 1, currentBoardSize - 1]
-        ];
-        for (const [r, c] of corners) {
-            if (board[r][c] === '') {
-                return [r, c];
-            }
-        }
-        return getRandomMove();
-    }
-
-    function getHardMove() {
-        const winningMove = findWinningMove('O');
-        if (winningMove) return winningMove;
-        const blockingMove = findWinningMove('X');
-        if (blockingMove) return blockingMove;
-        return getMediumMove();
-    }
-
-    function findWinningMove(player) {
-        for (let i = 0; i < currentBoardSize; i++) {
-            for (let j = 0; j < currentBoardSize; j++) {
-                if (board[i][j] === '') {
-                    board[i][j] = player;
-                    if (checkWin(player)) {
-                        board[i][j] = '';
-                        return [i, j];
-                    }
-                    board[i][j] = '';
-                }
-            }
-        }
-        return null;
-    }
-
-    resetButton.addEventListener('click', () => {
-        modal.style.display = 'flex';
-    });
-
-    confirmResetButton.addEventListener('click', () => {
-        modal.style.display = 'none';
-        resetGame();
-    });
-
-    cancelResetButton.addEventListener('click', () => {
-        modal.style.display = 'none';
-    });
-
-    resetScoreButton.addEventListener('click', () => {
-        player1Score = 0;
-        player2Score = 0;
-        player1ScoreDisplay.textContent = `${player1Name}: ${player1Score}`;
-        if (!isSinglePlayer) {
-            player2ScoreDisplay.textContent = `${player2Name}: ${player2Score}`;
-        }
-        highlightLeadingPlayer();
-        document.querySelector('.login-section').style.display = 'block';
-        document.querySelector('.game-section').style.display = 'none';
-    });
-
-    function initGame() {
-        gameCounter++;
-        currentPlayer = gameCounter % 2 === 0 ? 'X' : 'O';
-        board = Array(currentBoardSize).fill().map(() => Array(currentBoardSize).fill(''));
-        gameBoard.innerHTML = '';
-        gameBoard.style.gridTemplateColumns = `repeat(${currentBoardSize}, 100px)`;
-        gameBoard.style.gridTemplateRows = `repeat(${currentBoardSize}, 100px)`;
-
-        for (let i = 0; i < currentBoardSize; i++) {
-            for (let j = 0; j < currentBoardSize; j++) {
-                const cell = document.createElement('div');
-                cell.setAttribute('data-row', i);
-                cell.setAttribute('data-col', j);
-                cell.addEventListener('click', handleCellClick);
-                gameBoard.appendChild(cell);
-            }
-        }
-
-        gameActive = true;
-        updateStatus();
-    }
-});
-
+function updateGridSize() {
+    const newSize = parseInt(document.getElementById('grid-size').value);
+    gameState.currentBoardSize = newSize;
+    resetGame();
+}
