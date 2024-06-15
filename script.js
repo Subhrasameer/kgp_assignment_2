@@ -1,51 +1,166 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const singlePlayerBtn = document.getElementById('singlePlayerBtn');
-    const twoPlayerBtn = document.getElementById('twoPlayerBtn');
-    const singlePlayerForm = document.getElementById('singlePlayerForm');
-    const twoPlayerForm = document.getElementById('twoPlayerForm');
-    const startSinglePlayerBtn = document.getElementById('startSinglePlayerBtn');
-    const startTwoPlayerBtn = document.getElementById('startTwoPlayerBtn');
-    const playerNameInput = document.getElementById('playerName');
-    const player1NameInput = document.getElementById('player1Name');
-    const player2NameInput = document.getElementById('player2Name');
-    const difficultySelect = document.getElementById('difficulty');
-    const gameSection = document.querySelector('.game-section');
-    const statusDisplay = document.getElementById('statusDisplay');
-    const gameBoard = document.getElementById('gameBoard');
-    const player1ScoreDisplay = document.getElementById('player1Score');
-    const player2ScoreDisplay = document.getElementById('player2Score');
-    const resetGameBtn = document.getElementById('resetGameBtn');
-    const resetScoreBtn = document.getElementById('resetScoreBtn');
-    const resetModal = document.getElementById('resetModal');
-    const confirmResetBtn = document.getElementById('confirmResetBtn');
-    const cancelResetBtn = document.getElementById('cancelResetBtn');
+    const gameBoard = document.querySelector('.game-board');
+    const statusDisplay = document.querySelector('.status');
+    const resetButton = document.querySelector('.reset-button');
+    const modal = document.querySelector('.modal');
+    const confirmResetButton = document.getElementById('confirm-reset');
+    const cancelResetButton = document.getElementById('cancel-reset');
+    const singlePlayerButton = document.getElementById('single-player-button');
+    const twoPlayerButton = document.getElementById('two-player-button');
+    const startSingleGameButton = document.getElementById('start-single-game');
+    const startTwoGameButton = document.getElementById('start-two-game');
+    const playerNameInput = document.getElementById('player-name');
+    const player1Input = document.getElementById('player1-name');
+    const player2Input = document.getElementById('player2-name');
+    const player1ScoreDisplay = document.getElementById('player1-score');
+    const player2ScoreDisplay = document.getElementById('player2-score');
+    const resetScoreButton = document.querySelector('.reset-score-button');
+    const gridSizeSelector = document.getElementById('grid-size');
+    const difficultyLevelSelector = document.getElementById('difficulty-level');
 
-    let isSinglePlayer = false;
     let currentPlayer = 'X';
-    let gameActive = true;
     let player1Name = 'Player 1';
     let player2Name = 'Player 2';
-    let player1Score = parseInt(localStorage.getItem('player1Score')) || 0;
-    let player2Score = parseInt(localStorage.getItem('player2Score')) || 0;
-    let gridSize = 3;
-    let board = [];
+    let player1Score = 0;
+    let player2Score = 0;
+    let gameActive = true;
+    let currentBoardSize = 3;
+    let board = Array(currentBoardSize).fill().map(() => Array(currentBoardSize).fill(''));
+    let moveTimeout;
+    let gameCounter = 0;
+    let isSinglePlayer = false;
+    let difficultyLevel = 'easy';
 
-    const updateScore = (player) => {
+    singlePlayerButton.addEventListener('click', () => {
+        document.querySelector('.mode-selection').style.display = 'none';
+        document.querySelector('.login-section.single-player').style.display = 'block';
+    });
+
+    twoPlayerButton.addEventListener('click', () => {
+        document.querySelector('.mode-selection').style.display = 'none';
+        document.querySelector('.login-section.two-player').style.display = 'block';
+    });
+
+    startSingleGameButton.addEventListener('click', startSinglePlayerGame);
+    startTwoGameButton.addEventListener('click', startTwoPlayerGame);
+
+    function startSinglePlayerGame() {
+        player1Name = playerNameInput.value || 'Player 1';
+        player1ScoreDisplay.textContent = `${player1Name}: ${player1Score}`;
+        player2ScoreDisplay.style.display = 'none';
+        difficultyLevel = difficultyLevelSelector.value;
+        isSinglePlayer = true;
+        document.querySelector('.login-section.single-player').style.display = 'none';
+        document.querySelector('.game-section').style.display = 'block';
+       initGame();
+}
+
+function startTwoPlayerGame() {
+    player1Name = player1Input.value || 'Player 1';
+    player2Name = player2Input.value || 'Player 2';
+    player1ScoreDisplay.textContent = `${player1Name}: ${player1Score}`;
+    player2ScoreDisplay.textContent = `${player2Name}: ${player2Score}`;
+    player2ScoreDisplay.style.display = 'block';
+    isSinglePlayer = false;
+    document.querySelector('.login-section.two-player').style.display = 'none';
+    document.querySelector('.game-section').style.display = 'block';
+    initGame();
+}
+
+gridSizeSelector.addEventListener('change', () => {
+    currentBoardSize = parseInt(gridSizeSelector.value);
+    initGame();
+});
+
+function handleCellClick(event) {
+    if (!gameActive) return;
+
+    const row = parseInt(event.target.getAttribute('data-row'));
+    const col = parseInt(event.target.getAttribute('data-col'));
+
+    if (board[row][col] !== '') return;
+
+    board[row][col] = currentPlayer;
+    event.target.textContent = currentPlayer;
+
+    if (checkWin(currentPlayer)) {
+        statusDisplay.textContent = `${currentPlayer === 'X' ? player1Name : player2Name} Wins!`;
+        alert(`${currentPlayer === 'X' ? player1Name : player2Name} Wins!`);
+        updateScore(currentPlayer);
+        gameActive = false;
+        moveTimeout = setTimeout(resetGame, 5000);
+        } else if (isBoardFull()) {
+            statusDisplay.textContent = 'Game is a draw!';
+            alert('Game is a draw!');
+            gameActive = false;
+            moveTimeout = setTimeout(resetGame, 5000);
+        } else {
+            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+            updateStatus();
+            if (isSinglePlayer && currentPlayer === 'O') {
+                setTimeout(makeAIMove, 1000);
+            }
+        }
+    }
+
+    function checkWin(player) {
+        for (let i = 0; i < currentBoardSize; i++) {
+            if (board[i].every(cell => cell === player)) return true;
+            if (board.every(row => row[i] === player)) return true;
+        }
+
+        if (board.every((row, index) => row[index] === player)) return true;
+        if (board.every((row, index) => row[currentBoardSize - index - 1] === player)) return true;
+
+        return false;
+    }
+
+    function isBoardFull() {
+        return board.every(row => row.every(cell => cell !== ''));
+    }
+
+    function resetGame() {
+        clearTimeout(moveTimeout);
+        gameCounter++;
+        currentPlayer = gameCounter % 2 === 0 ? 'X' : 'O';
+
+        board = Array(currentBoardSize).fill().map(() => Array(currentBoardSize).fill(''));
+        gameBoard.innerHTML = '';
+        gameBoard.style.gridTemplateColumns = `repeat(${currentBoardSize}, 100px)`;
+        gameBoard.style.gridTemplateRows = `repeat(${currentBoardSize}, 100px)`;
+
+        for (let i = 0; i < currentBoardSize; i++) {
+            for (let j = 0; j < currentBoardSize; j++) {
+                const cell = document.createElement('div');
+                cell.setAttribute('data-row', i);
+                cell.setAttribute('data-col', j);
+                cell.addEventListener('click', handleCellClick);
+                gameBoard.appendChild(cell);
+            }
+        }
+
+        gameActive = true;
+        updateStatus();
+    }
+
+    function updateStatus() {
+        statusDisplay.textContent = `${currentPlayer === 'X' ? player1Name : player2Name}'s turn`;
+    }
+
+    function updateScore(player) {
         if (player === 'X') {
             player1Score++;
-            localStorage.setItem('player1Score', player1Score);
         } else {
             player2Score++;
-            localStorage.setItem('player2Score', player2Score);
         }
         player1ScoreDisplay.textContent = `${player1Name}: ${player1Score}`;
         if (!isSinglePlayer) {
             player2ScoreDisplay.textContent = `${player2Name}: ${player2Score}`;
         }
         highlightLeadingPlayer();
-    };
+    }
 
-    const highlightLeadingPlayer = () => {
+    function highlightLeadingPlayer() {
         if (player1Score > player2Score) {
             player1ScoreDisplay.classList.add('leading');
             player2ScoreDisplay.classList.remove('leading');
@@ -55,156 +170,109 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             player1ScoreDisplay.classList.remove('leading');
             player2ScoreDisplay.classList.remove('leading');
-            player1ScoreDisplay.classList.remove('leading');
-            player2ScoreDisplay.classList.remove('leading');
         }
-    };
+    }
 
-    const initializeBoard = () => {
-        board = Array(gridSize).fill().map(() => Array(gridSize).fill(''));
-        gameBoard.style.gridTemplateColumns = `repeat(${gridSize}, 100px)`;
-        gameBoard.style.gridTemplateRows = `repeat(${gridSize}, 100px)`;
-        gameBoard.innerHTML = '';
-        for (let i = 0; i < gridSize; i++) {
-            for (let j = 0; j < gridSize; j++) {
-                const cell = document.createElement('div');
-                cell.addEventListener('click', () => handleCellClick(i, j));
-                gameBoard.appendChild(cell);
-            }
-        }
-        updateStatus();
-    };
+    function makeAIMove() {
+        let row, col;
 
-    const handleCellClick = (row, col) => {
-        if (!gameActive || board[row][col] !== '') return;
-
-        board[row][col] = currentPlayer;
-        document.querySelector(`.game-board div:nth-child(${row * gridSize + col + 1})`).textContent = currentPlayer;
-
-        if (checkWin(currentPlayer)) {
-            statusDisplay.textContent = `${currentPlayer} wins!`;
-            updateScore(currentPlayer);
-            gameActive = false;
-            setTimeout(resetBoard, 5000);
-        } else if (isBoardFull()) {
-            statusDisplay.textContent = 'It\'s a tie!';
-            setTimeout(resetBoard, 5000);
+        if (difficultyLevel === 'easy') {
+            [row, col] = getRandomMove();
+        } else if (difficultyLevel === 'medium') {
+            [row, col] = getMediumMove();
         } else {
-            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+            [row, col] = getHardMove();
+        }
+
+        board[row][col] = 'O';
+        const cell = document.querySelector(`[data-row='${row}'][data-col='${col}']`);
+        cell.textContent = 'O';
+
+        if (checkWin('O')) {
+            statusDisplay.textContent = `${player2Name} Wins!`;
+            alert(`${player2Name} Wins!`);
+            updateScore('O');
+            gameActive = false;
+            moveTimeout = setTimeout(resetGame, 5000);
+        } else if (isBoardFull()) {
+            statusDisplay.textContent = 'Game is a draw!';
+            alert('Game is a draw!');
+            gameActive = false;
+            moveTimeout = setTimeout(resetGame, 5000);
+        } else {
+            currentPlayer = 'X';
             updateStatus();
-            if (isSinglePlayer && currentPlayer === 'O') {
-                makeComputerMove();
-            }
         }
-    };
+    }
 
-    const updateStatus = () => {
-        statusDisplay.textContent = `${currentPlayer}'s turn`;
-    };
-
-    const isBoardFull = () => {
-        return board.every(row => row.every(cell => cell !== ''));
-    };
-
-    const checkWin = (player) => {
-        const winCondition = Array(gridSize).fill(player).join('');
-        
-        // Check rows
-        for (let i = 0; i < gridSize; i++) {
-            if (board[i].join('') === winCondition) return true;
-        }
-        
-        // Check columns
-        for (let i = 0; i < gridSize; i++) {
-            if (board.map(row => row[i]).join('') === winCondition) return true;
-        }
-        
-        // Check diagonals
-        if (board.map((row, i) => row[i]).join('') === winCondition) return true;
-        if (board.map((row, i) => row[gridSize - i - 1]).join('') === winCondition) return true;
-        
-        return false;
-    };
-
-    const resetBoard = () => {
-        gameActive = true;
-        currentPlayer = 'X';
-        initializeBoard();
-    };
-
-    const makeComputerMove = () => {
-        let moveMade = false;
-        const difficulty = difficultySelect.value;
-
-        if (difficulty === 'easy') {
-            // Make a random move
-            while (!moveMade) {
-                const row = Math.floor(Math.random() * gridSize);
-                const col = Math.floor(Math.random() * gridSize);
-                if (board[row][col] === '') {
-                    handleCellClick(row, col);
-                    moveMade = true;
+    function getRandomMove() {
+        const emptyCells = [];
+        for (let i = 0; i < currentBoardSize; i++) {
+            for (let j = 0; j < currentBoardSize; j++) {
+                if (board[i][j] === '') {
+                    emptyCells.push([i, j]);
                 }
             }
-        } else if (difficulty === 'medium') {
-            // Medium AI logic can be added here
-        } else if (difficulty === 'hard') {
-            // Hard AI logic can be added here
         }
-    };
+        return emptyCells[Math.floor(Math.random() * emptyCells.length)];
+    }
 
-    // Event Listeners
-    singlePlayerBtn.addEventListener('click', () => {
-        singlePlayerForm.style.display = 'block';
-        twoPlayerForm.style.display = 'none';
+    function getMediumMove() {
+        if (board[Math.floor(currentBoardSize / 2)][Math.floor(currentBoardSize / 2)] === '') {
+            return [Math.floor(currentBoardSize / 2), Math.floor(currentBoardSize / 2)];
+        }
+        const corners = [
+            [0, 0], [0, currentBoardSize - 1],
+            [currentBoardSize - 1, 0], [currentBoardSize - 1, currentBoardSize - 1]
+        ];
+        for (const [r, c] of corners) {
+            if (board[r][c] === '') {
+                return [r, c];
+            }
+        }
+        return getRandomMove();
+    }
+
+    function getHardMove() {
+        const winningMove = findWinningMove('O');
+        if (winningMove) return winningMove;
+        const blockingMove = findWinningMove('X');
+        if (blockingMove) return blockingMove;
+        return getMediumMove();
+    }
+
+    function findWinningMove(player) {
+        for (let i = 0; i < currentBoardSize; i++) {
+            for (let j = 0; j < currentBoardSize; j++) {
+                if (board[i][j] === '') {
+                    board[i][j] = player;
+                    if (checkWin(player)) {
+                        board[i][j] = '';
+                        return [i, j];
+                    }
+                    board[i][j] = '';
+                }
+            }
+        }
+        return null;
+    }
+
+    resetButton.addEventListener('click', () => {
+        modal.style.display = 'flex';
     });
 
-    twoPlayerBtn.addEventListener('click', () => {
-        twoPlayerForm.style.display = 'block';
-        singlePlayerForm.style.display = 'none';
+    confirmResetButton.addEventListener('click', () => {
+        modal.style.display = 'none';
+        resetGame();
     });
 
-    startSinglePlayerBtn.addEventListener('click', () => {
-        player1Name = playerNameInput.value || 'Player 1';
-        player2Name = 'Computer';
-        isSinglePlayer = true;
-        initializeGame();
+    cancelResetButton.addEventListener('click', () => {
+        modal.style.display = 'none';
     });
 
-    startTwoPlayerBtn.addEventListener('click', () => {
-        player1Name = player1NameInput.value || 'Player 1';
-        player2Name = player2NameInput.value || 'Player 2';
-        isSinglePlayer = false;
-        initializeGame();
-    });
-
-    const initializeGame = () => {
-        document.querySelector('.login-section').style.display = 'none';
-        gameSection.style.display = 'block';
-        player1ScoreDisplay.textContent = `${player1Name}: ${player1Score}`;
-        player2ScoreDisplay.textContent = `${player2Name}: ${player2Score}`;
-        highlightLeadingPlayer();
-        resetBoard();
-    };
-
-    resetGameBtn.addEventListener('click', () => {
-        resetModal.style.display = 'flex';
-    });
-
-    confirmResetBtn.addEventListener('click', () => {
-        resetBoard();
-        resetModal.style.display = 'none';
-    });
-
-    cancelResetBtn.addEventListener('click', () => {
-        resetModal.style.display = 'none';
-    });
-
-    resetScoreBtn.addEventListener('click', () => {
+    resetScoreButton.addEventListener('click', () => {
         player1Score = 0;
         player2Score = 0;
-        localStorage.setItem('player1Score', player1Score);
-        localStorage.setItem('player2Score', player2Score);
         player1ScoreDisplay.textContent = `${player1Name}: ${player1Score}`;
         if (!isSinglePlayer) {
             player2ScoreDisplay.textContent = `${player2Name}: ${player2Score}`;
@@ -214,7 +282,26 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelector('.game-section').style.display = 'none';
     });
 
-    // Initialize game board
-    initializeBoard();
-    updateStatus();
+    function initGame() {
+        gameCounter++;
+        currentPlayer = gameCounter % 2 === 0 ? 'X' : 'O';
+        board = Array(currentBoardSize).fill().map(() => Array(currentBoardSize).fill(''));
+        gameBoard.innerHTML = '';
+        gameBoard.style.gridTemplateColumns = `repeat(${currentBoardSize}, 100px)`;
+        gameBoard.style.gridTemplateRows = `repeat(${currentBoardSize}, 100px)`;
+
+        for (let i = 0; i < currentBoardSize; i++) {
+            for (let j = 0; j < currentBoardSize; j++) {
+                const cell = document.createElement('div');
+                cell.setAttribute('data-row', i);
+                cell.setAttribute('data-col', j);
+                cell.addEventListener('click', handleCellClick);
+                gameBoard.appendChild(cell);
+            }
+        }
+
+        gameActive = true;
+        updateStatus();
+    }
 });
+
