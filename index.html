@@ -11,13 +11,35 @@
     <header>
         <h1>Tic-Tac-Toe Game <img class="game-icon" src="tic-tac-toe.jpg" alt="Game Icon"></h1>
     </header>
-    <div class="login-section">
+    
+    <!-- Game Mode Selection -->
+    <div class="mode-selection">
+        <h2>Select Game Mode</h2>
+        <button id="single-player-button">Single Player</button>
+        <button id="two-player-button">Two Player</button>
+    </div>
+    
+    <!-- Player Name Input Section -->
+    <div class="login-section single-player" style="display:none;">
+        <label for="player-name">Player Name: </label>
+        <input type="text" id="player-name" placeholder="Enter Your Name">
+        <label for="difficulty-level">Difficulty Level: </label>
+        <select id="difficulty-level">
+            <option value="easy">Easy</option>
+            <option value="medium">Medium</option>
+            <option value="hard">Hard</option>
+        </select>
+        <button id="start-single-game">Start Game</button>
+    </div>
+    
+    <div class="login-section two-player" style="display:none;">
         <label for="player1-name">Player 1 Name: </label>
         <input type="text" id="player1-name" placeholder="Enter Player 1 Name">
         <label for="player2-name">Player 2 Name: </label>
         <input type="text" id="player2-name" placeholder="Enter Player 2 Name">
-        <button id="start-game">Start Game</button>
+        <button id="start-two-game">Start Game</button>
     </div>
+    
     <div class="game-section" style="display:none;">
         <div class="status"></div>
         <label for="grid-size">Choose Grid Size: </label>
