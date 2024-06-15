@@ -5,57 +5,66 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tic-Tac-Toe Game</title>
     <link rel="stylesheet" href="styles.css">
+    <script defer src="script.js"></script>
 </head>
 <body>
     <header>
-        <h1>Tic-Tac-Toe Game <img src="tic-tac-toe.jpg" alt="Game Icon"></h1>
-        <p>Enjoy playing Tic-Tac-Toe with friends or against the computer!</p>
+        <h1>Tic-Tac-Toe Game <img class="game-icon" src="tic-tac-toe.jpg" alt="Game Icon"></h1>
     </header>
-    <div class="game-container">
-        <div class="mode-selection">
-            <button id="singlePlayerBtn">Single Player</button>
-            <button id="twoPlayerBtn">Two Player</button>
-        </div>
-        <div class="login-section">
-            <div id="singlePlayerForm" style="display:none;">
-                <h2>Single Player</h2>
-                <label for="playerName">Enter your name:</label>
-                <input type="text" id="playerName" placeholder="Your Name">
-                <label for="difficulty">Select difficulty:</label>
-                <select id="difficulty">
-                    <option value="easy">Easy</option>
-                    <option value="medium">Medium</option>
-                    <option value="hard">Hard</option>
-                </select>
-                <button id="startSinglePlayerBtn">Start Game</button>
-            </div>
-            <div id="twoPlayerForm" style="display:none;">
-                <h2>Two Player</h2>
-                <label for="player1Name">Enter Player 1 name:</label>
-                <input type="text" id="player1Name" placeholder="Player 1 Name">
-                <label for="player2Name">Enter Player 2 name:</label>
-                <input type="text" id="player2Name" placeholder="Player 2 Name">
-                <button id="startTwoPlayerBtn">Start Game</button>
-            </div>
-        </div>
-        <div class="game-section" style="display:none;">
-            <div class="status-display" id="statusDisplay"></div>
-            <div class="game-board" id="gameBoard"></div>
-            <div class="score-display">
-                <div id="player1Score">Player 1: 0</div>
-                <div id="player2Score">Player 2: 0</div>
-            </div>
-            <button id="resetGameBtn">Reset Game</button>
-            <button id="resetScoreBtn">Reset Scores</button>
-        </div>
+    
+    <!-- Game Mode Selection -->
+    <div class="mode-selection">
+        <h2>Select Game Mode</h2>
+        <button id="single-player-button">Single Player</button>
+        <button id="two-player-button">Two Player</button>
     </div>
-    <div class="modal" id="resetModal">
+    
+    <!-- Player Name Input Section -->
+    <div class="login-section single-player" style="display:none;">
+        <label for="player-name">Player Name: </label>
+        <input type="text" id="player-name" placeholder="Enter Your Name">
+        <label for="difficulty-level">Difficulty Level: </label>
+        <select id="difficulty-level">
+            <option value="easy">Easy</option>
+            <option value="medium">Medium</option>
+            <option value="hard">Hard</option>
+        </select>
+        <button id="start-single-game">Start Game</button>
+    </div>
+    
+    <div class="login-section two-player" style="display:none;">
+        <label for="player1-name">Player 1 Name: </label>
+        <input type="text" id="player1-name" placeholder="Enter Player 1 Name">
+        <label for="player2-name">Player 2 Name: </label>
+        <input type="text" id="player2-name" placeholder="Enter Player 2 Name">
+        <button id="start-two-game">Start Game</button>
+    </div>
+    
+    <div class="game-section" style="display:none;">
+        <div class="status"></div>
+        <label for="grid-size">Choose Grid Size: </label>
+        <select id="grid-size">
+            <option value="3">3x3</option>
+            <option value="4">4x4</option>
+            <option value="5">5x5</option>
+        </select>
+        <div class="game-board"></div>
+        <button class="reset-button">Reset Game</button>
+    </div>
+    <div class="score-section">
+        <h2>Scoreboard</h2>
+        <div class="scoreboard">
+            <div class="player-score" id="player1-score">Player 1: 0</div>
+            <div class="player-score" id="player2-score">Player 2: 0</div>
+        </div>
+        <button class="reset-score-button">Reset Score</button>
+    </div>
+    <div class="modal">
         <div class="modal-content">
-            <p>Are you sure you want to reset the game?</p>
-            <button id="confirmResetBtn">Yes</button>
-            <button id="cancelResetBtn">No</button>
+            <p>Are you sure you want to reset the current game?</p>
+            <button class="modal-button" id="confirm-reset">Yes</button>
+            <button class="modal-button" id="cancel-reset">No</button>
         </div>
     </div>
-    <script src="script.js"></script>
 </body>
 </html>
