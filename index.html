@@ -9,7 +9,7 @@
 </head>
 <body>
     <header>
-        <h1>Tic-Tac-Toe Game <img class="game-icon" src="tic-tac-toe.jpg" alt="Game Icon"></h1>
+        <h1>Tic-Tac-Toe Game <img class="game-icon" src="icon.png" alt="Game Icon"></h1>
     </header>
     <div class="login-section">
         <label for="player1-name">Player 1 Name: </label>
@@ -20,6 +20,12 @@
     </div>
     <div class="game-section" style="display:none;">
         <div class="status"></div>
+        <label for="grid-size">Choose Grid Size: </label>
+        <select id="grid-size">
+            <option value="3">3x3</option>
+            <option value="4">4x4</option>
+            <option value="5">5x5</option>
+        </select>
         <div class="game-board"></div>
         <button class="reset-button">Reset Game</button>
     </div>
